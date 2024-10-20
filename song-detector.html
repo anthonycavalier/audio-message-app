@@ -3,38 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultrasound Message Detector</title>
+    <title>Song Detector</title>
 </head>
 <body>
-    <h1>Listen for Hidden Messages</h1>
+    <h1>Listen for Song and Decode Message</h1>
     <button id="start-listening">Start Listening</button>
     <p id="status"></p>
     <p id="decoded-message"></p>
 
     <script>
-        document.getElementById('start-listening').addEventListener('click', listenForUltrasound);
+        document.getElementById('start-listening').addEventListener('click', listenForSong);
 
-        async function listenForUltrasound() {
+        async function listenForSong() {
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             const microphone = audioContext.createMediaStreamSource(stream);
             const analyser = audioContext.createAnalyser();
+            analyser.fftSize = 2048; // Set FFT size for better frequency resolution
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
             microphone.connect(analyser);
-            const dataArray = new Uint8Array(analyser.frequencyBinCount);
             document.getElementById('status').innerText = "Listening...";
 
             function detectAudio() {
                 analyser.getByteFrequencyData(dataArray);
-                const detectedFrequencies = getDetectedFrequencies(dataArray, audioContext.sampleRate);
-                if (detectedFrequencies.length > 0) {
-                    document.getElementById('status').innerText = `Detected Frequencies: ${detectedFrequencies.join(', ')} Hz`;
-                    const decodedMessage = decodeMessage(detectedFrequencies);
-                    if (decodedMessage) {
-                        handleDetectedSignal(decodedMessage);
+                const detectedFrequency = getDetectedFrequency(dataArray);
+                if (detectedFrequency) {
+                    console.log(`Detected Frequency: ${detectedFrequency} Hz`); // Log detected frequency for debugging
+                    if (isTargetFrequency(detectedFrequency)) {
+                        handleDetectedSignal();
                     }
-                } else {
-                    document.getElementById('status').innerText = "No hidden frequencies detected.";
                 }
                 requestAnimationFrame(detectAudio);
             }
@@ -42,30 +40,31 @@
             detectAudio();
         }
 
-        function getDetectedFrequencies(dataArray, sampleRate) {
-            const threshold = 50; // Threshold for detection
-            const detectedFrequencies = [];
+        function getDetectedFrequency(dataArray) {
+            const threshold = 200; // Detection threshold
             for (let i = 0; i < dataArray.length; i++) {
                 if (dataArray[i] > threshold) {
-                    const frequency = Math.round(i * (sampleRate / dataArray.length)); // Calculate frequency
-                    if (frequency > 20000) { // Only consider ultrasonic frequencies
-                        detectedFrequencies.push(frequency);
-                    }
+                    const frequency = i * (window.AudioContext.sampleRate / dataArray.length);
+                    return frequency; // Return detected frequency in Hz
                 }
             }
-            return detectedFrequencies;
+            return null;
         }
 
-        function decodeMessage(frequencies) {
-            const messageChars = frequencies.map(freq => {
-                return String.fromCharCode(((freq / 100) - 20) % 256); // Reverse encoding
-            });
-            return messageChars.join('');
+        function isTargetFrequency(frequency) {
+            // Check if detected frequency is in the ultrasonic range
+            return frequency > 20000 && frequency < 22000; // Adjust to the expected range of frequencies
         }
 
-        function handleDetectedSignal(decodedMessage) {
+        function handleDetectedSignal() {
             document.getElementById('status').innerText = "Signal detected! Decoding message...";
+            const encodedMessage = "72,101,108,108,111"; // Placeholder for the received encoded message
+            const decodedMessage = decodeMessage(encodedMessage);
             document.getElementById('decoded-message').innerText = `Decoded Message: ${decodedMessage}`;
+        }
+
+        function decodeMessage(encodedMessage) {
+            return encodedMessage.split(',').map(code => String.fromCharCode(code)).join('');
         }
     </script>
 </body>
