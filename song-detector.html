@@ -12,9 +12,9 @@
     <p id="decoded-message"></p>
 
     <script>
-        document.getElementById('start-listening').addEventListener('click', listenForSongAndUltrasound);
+        document.getElementById('start-listening').addEventListener('click', listenForUltrasound);
 
-        async function listenForSongAndUltrasound() {
+        async function listenForUltrasound() {
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             const microphone = audioContext.createMediaStreamSource(stream);
@@ -27,11 +27,10 @@
             function detectAudio() {
                 analyser.getByteFrequencyData(dataArray);
                 const detectedFrequencies = getDetectedFrequencies(dataArray, audioContext.sampleRate);
-                const detectedSong = detectSong(dataArray);
-                
                 if (detectedFrequencies.length > 0) {
+                    document.getElementById('status').innerText = `Detected Frequencies: ${detectedFrequencies.join(', ')} Hz`;
                     const decodedMessage = decodeMessage(detectedFrequencies);
-                    if (detectedSong) {
+                    if (decodedMessage) {
                         handleDetectedSignal(decodedMessage);
                     }
                 } else {
@@ -55,18 +54,6 @@
                 }
             }
             return detectedFrequencies;
-        }
-
-        function detectSong(dataArray) {
-            // For simplicity, we can check for specific known frequencies or use a range
-            const songFrequencyRange = [20000, 21000]; // Example range for song
-            for (let i = 0; i < dataArray.length; i++) {
-                const frequency = Math.round(i * (sampleRate / dataArray.length));
-                if (frequency >= songFrequencyRange[0] && frequency <= songFrequencyRange[1]) {
-                    return true; // Detected song
-                }
-            }
-            return false;
         }
 
         function decodeMessage(frequencies) {
