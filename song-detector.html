@@ -3,36 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Song Detector</title>
+    <title>Ultrasound Message Detector</title>
 </head>
 <body>
-    <h1>Listen for Song and Decode Message</h1>
+    <h1>Listen for Hidden Messages</h1>
     <button id="start-listening">Start Listening</button>
     <p id="status"></p>
     <p id="decoded-message"></p>
 
     <script>
-        document.getElementById('start-listening').addEventListener('click', listenForSong);
+        document.getElementById('start-listening').addEventListener('click', listenForSongAndUltrasound);
 
-        async function listenForSong() {
+        async function listenForSongAndUltrasound() {
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             const microphone = audioContext.createMediaStreamSource(stream);
             const analyser = audioContext.createAnalyser();
-            analyser.fftSize = 2048; // Set FFT size for better frequency resolution
-            const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
             microphone.connect(analyser);
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
             document.getElementById('status').innerText = "Listening...";
 
             function detectAudio() {
                 analyser.getByteFrequencyData(dataArray);
-                const detectedFrequency = getDetectedFrequency(dataArray);
-                if (detectedFrequency) {
-                    console.log(`Detected Frequency: ${detectedFrequency} Hz`);
-                    if (isTargetFrequency(detectedFrequency)) {
-                        handleDetectedSignal();
+                const detectedFrequencies = getDetectedFrequencies(dataArray, audioContext.sampleRate);
+                const detectedSong = detectSong(dataArray);
+                
+                if (detectedFrequencies.length > 0) {
+                    const decodedMessage = decodeMessage(detectedFrequencies);
+                    if (detectedSong) {
+                        handleDetectedSignal(decodedMessage);
                     }
+                } else {
+                    document.getElementById('status').innerText = "No hidden frequencies detected.";
                 }
                 requestAnimationFrame(detectAudio);
             }
@@ -40,31 +43,42 @@
             detectAudio();
         }
 
-        function getDetectedFrequency(dataArray) {
-            const threshold = 200; // Detection threshold
+        function getDetectedFrequencies(dataArray, sampleRate) {
+            const threshold = 50; // Threshold for detection
+            const detectedFrequencies = [];
             for (let i = 0; i < dataArray.length; i++) {
                 if (dataArray[i] > threshold) {
-                    const frequency = i * (window.audioContext.sampleRate / dataArray.length);
-                    return frequency; // Return detected frequency in Hz
+                    const frequency = Math.round(i * (sampleRate / dataArray.length)); // Calculate frequency
+                    if (frequency > 20000) { // Only consider ultrasonic frequencies
+                        detectedFrequencies.push(frequency);
+                    }
                 }
             }
-            return null;
+            return detectedFrequencies;
         }
 
-        function isTargetFrequency(frequency) {
-            // Check if detected frequency is in the ultrasonic range
-            return frequency > 20000 && frequency < 22000; // Example ultrasonic range
+        function detectSong(dataArray) {
+            // For simplicity, we can check for specific known frequencies or use a range
+            const songFrequencyRange = [20000, 21000]; // Example range for song
+            for (let i = 0; i < dataArray.length; i++) {
+                const frequency = Math.round(i * (sampleRate / dataArray.length));
+                if (frequency >= songFrequencyRange[0] && frequency <= songFrequencyRange[1]) {
+                    return true; // Detected song
+                }
+            }
+            return false;
         }
 
-        function handleDetectedSignal() {
+        function decodeMessage(frequencies) {
+            const messageChars = frequencies.map(freq => {
+                return String.fromCharCode(((freq / 100) - 20) % 256); // Reverse encoding
+            });
+            return messageChars.join('');
+        }
+
+        function handleDetectedSignal(decodedMessage) {
             document.getElementById('status').innerText = "Signal detected! Decoding message...";
-            const encodedMessage = "72,101,108,108,111"; // Placeholder for the received encoded message
-            const decodedMessage = decodeMessage(encodedMessage);
             document.getElementById('decoded-message').innerText = `Decoded Message: ${decodedMessage}`;
-        }
-
-        function decodeMessage(encodedMessage) {
-            return encodedMessage.split(',').map(code => String.fromCharCode(code)).join('');
         }
     </script>
 </body>
