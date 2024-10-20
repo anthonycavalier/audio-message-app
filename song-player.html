@@ -37,19 +37,7 @@
             gainNode.gain.setValueAtTime(0.1, audioContext.currentTime); // Set volume for safe playback
             
             const audioElement = new Audio("https://cdn.shopify.com/s/files/1/0630/3829/2020/files/teamo.mp3");
-            audioElement.play();
 
-            // Play ultrasonic frequencies
-            frequencies.forEach((freq, index) => {
-                const oscillator = audioContext.createOscillator();
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                oscillator.start(audioContext.currentTime + index * 0.5); // Play each frequency for 0.5 seconds
-                oscillator.stop(audioContext.currentTime + (index + 1) * 0.5); // Stop after 0.5 seconds
-            });
-        }
-    </script>
-</body>
-</html>
+            // Play the song
+            audioElement.play().then(() => {
+                console.log("Song is play
