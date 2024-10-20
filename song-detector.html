@@ -22,17 +22,16 @@
 
             microphone.connect(analyser);
             const dataArray = new Uint8Array(analyser.frequencyBinCount);
-            const targetFrequency = 106.5; // Example frequency for Daft Punk song
-
             document.getElementById('status').innerText = "Listening...";
 
             function detectAudio() {
                 analyser.getByteFrequencyData(dataArray);
-                const detectedFrequency = getDetectedFrequency(dataArray);
-                if (detectedFrequency) {
-                    document.getElementById('status').innerText = `Detected Frequency: ${detectedFrequency} Hz`;
-                    if (isTargetSong(detectedFrequency)) {
-                        handleDetectedSignal();
+                const detectedFrequencies = getDetectedFrequencies(dataArray);
+                if (detectedFrequencies.length > 0) {
+                    document.getElementById('status').innerText = `Detected Frequencies: ${detectedFrequencies.join(', ')} Hz`;
+                    const decodedMessage = decodeMessage(detectedFrequencies);
+                    if (decodedMessage) {
+                        handleDetectedSignal(decodedMessage);
                     }
                 }
                 requestAnimationFrame(detectAudio);
@@ -41,32 +40,27 @@
             detectAudio();
         }
 
-        function getDetectedFrequency(dataArray) {
+        function getDetectedFrequencies(dataArray) {
             const threshold = 200; // Detection threshold
+            const detectedFrequencies = [];
             for (let i = 0; i < dataArray.length; i++) {
                 if (dataArray[i] > threshold) {
                     const frequency = i * (audioContext.sampleRate / dataArray.length); // Calculate frequency
-                    return frequency; // Return detected frequency in Hz
+                    detectedFrequencies.push(Math.round(frequency)); // Round to the nearest whole number
                 }
             }
-            return null;
+            return detectedFrequencies;
         }
 
-        function isTargetSong(frequency) {
-            // Check if detected frequency matches the target frequency for the song
-            return frequency > 105.0 && frequency < 108.0; // Example range for simplicity
+        function decodeMessage(frequencies) {
+            // Decode frequencies into message
+            const messageChars = frequencies.map(freq => String.fromCharCode(freq));
+            return messageChars.join('');
         }
 
-        function handleDetectedSignal() {
-            document.getElementById('status').innerText = "Song detected! Decoding message...";
-            const encodedMessage = "72,101,108,108,111"; // Placeholder for received encoded message
-            const decodedMessage = decodeMessage(encodedMessage);
+        function handleDetectedSignal(decodedMessage) {
+            document.getElementById('status').innerText = "Signal detected! Decoding message...";
             document.getElementById('decoded-message').innerText = `Decoded Message: ${decodedMessage}`;
-        }
-
-        function decodeMessage(encodedMessage) {
-            // Simple decoding function
-            return encodedMessage.split(',').map(code => String.fromCharCode(code)).join('');
         }
     </script>
 </body>

@@ -27,12 +27,26 @@
                 document.getElementById('message-status').innerText = "Message sent!";
                 console.log(`Encoded Message: ${encodedMessage}`); // Placeholder for further actions
                 audioElement.play(); // Play the audio with the message
+                playEncodedMessage(encodedMessage); // Play the encoded message as a sound
             }
         });
 
         function encodeMessage(message) {
             // Simple encoding function (for demonstration purposes)
             return message.split('').map(char => char.charCodeAt(0)).join(',');
+        }
+
+        function playEncodedMessage(encodedMessage) {
+            const frequencies = encodedMessage.split(',').map(num => Number(num));
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+            frequencies.forEach((freq, index) => {
+                const oscillator = audioContext.createOscillator();
+                oscillator.type = 'sine'; // Waveform type
+                oscillator.frequency.setValueAtTime(freq, audioContext.currentTime + index); // Set frequency
+                oscillator.start(audioContext.currentTime + index);
+                oscillator.stop(audioContext.currentTime + index + 0.5); // Play for half a second
+            });
         }
     </script>
 </body>
