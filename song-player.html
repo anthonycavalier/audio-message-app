@@ -27,7 +27,6 @@
         function encodeMessage(message) {
             // Encode each character to a frequency in the ultrasonic range (above 20 kHz)
             return message.split('').map(char => {
-                // Map characters to a frequency between 20 kHz and 22 kHz
                 return 20000 + (char.charCodeAt(0) % 2000); // Ensure it’s above 20 kHz
             });
         }
@@ -37,17 +36,14 @@
             const audioElement = new Audio("https://cdn.shopify.com/s/files/1/0630/3829/2020/files/teamo.mp3");
 
             // Play the song
-            audioElement.play().then(() => {
-                console.log("Song is playing");
-            }).catch((error) => {
-                console.error("Error playing the song:", error);
-            });
+            audioElement.play();
 
-            // Play ultrasonic frequencies
+            // Play ultrasonic frequencies at a low amplitude
             frequencies.forEach((freq, index) => {
                 const oscillator = audioContext.createOscillator();
                 oscillator.type = 'sine';
                 oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+                oscillator.connect(audioContext.destination); // Connect to audio output
                 oscillator.start(audioContext.currentTime + index * 0.5); // Play each frequency for 0.5 seconds
                 oscillator.stop(audioContext.currentTime + (index + 1) * 0.5); // Stop after 0.5 seconds
             });
