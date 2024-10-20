@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Song Player</title>
+</head>
+<body>
+    <h1>Play Song with Message</h1>
+    <input type="text" id="message-input" placeholder="Enter your message here" />
+    <audio id="audio" controls>
+        <source src="https://cdn.shopify.com/s/files/1/0630/3829/2020/files/teamo.mp3" type="audio/mpeg">
+        Your browser does not support the audio tag.
+    </audio>
+    <button id="send-message">Send Message</button>
+    <p id="message-status"></p>
+
+    <script>
+        const audioElement = document.getElementById('audio');
+        const messageInput = document.getElementById('message-input');
+        const messageButton = document.getElementById('send-message');
+
+        messageButton.addEventListener('click', () => {
+            const message = messageInput.value;
+            if (message) {
+                const encodedMessage = encodeMessage(message);
+                document.getElementById('message-status').innerText = "Message sent!";
+                console.log(`Encoded Message: ${encodedMessage}`); // Placeholder for further actions
+                audioElement.play(); // Play the audio with the message
+            }
+        });
+
+        function encodeMessage(message) {
+            // Simple encoding function (for demonstration purposes)
+            return message.split('').map(char => char.charCodeAt(0)).join(',');
+        }
+    </script>
+</body>
+</html>
