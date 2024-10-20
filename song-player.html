@@ -25,27 +25,31 @@
             if (message) {
                 const encodedMessage = encodeMessage(message);
                 document.getElementById('message-status').innerText = "Message sent!";
-                console.log(`Encoded Message: ${encodedMessage}`); // Placeholder for further actions
-                audioElement.play(); // Play the audio with the message
-                playEncodedMessage(encodedMessage); // Play the encoded message as a sound
+                console.log(`Encoded Message: ${encodedMessage}`);
+                audioElement.play().then(() => {
+                    // Start playing encoded message after the song has started
+                    playEncodedMessage(encodedMessage);
+                });
             }
         });
 
         function encodeMessage(message) {
-            // Simple encoding function (for demonstration purposes)
             return message.split('').map(char => char.charCodeAt(0)).join(',');
         }
 
         function playEncodedMessage(encodedMessage) {
             const frequencies = encodedMessage.split(',').map(num => Number(num));
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            let startTime = audioContext.currentTime;
 
-            frequencies.forEach((freq, index) => {
+            frequencies.forEach((freq) => {
                 const oscillator = audioContext.createOscillator();
-                oscillator.type = 'sine'; // Waveform type
-                oscillator.frequency.setValueAtTime(freq, audioContext.currentTime + index); // Set frequency
-                oscillator.start(audioContext.currentTime + index);
-                oscillator.stop(audioContext.currentTime + index + 0.5); // Play for half a second
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(freq, startTime); // Set frequency
+                oscillator.connect(audioContext.destination);
+                oscillator.start(startTime);
+                oscillator.stop(startTime + 0.2); // Play for 200 ms
+                startTime += 0.3; // Increment start time for the next tone
             });
         }
     </script>
