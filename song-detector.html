@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Song Detector</title>
+    <title>Ultrasound Message Detector</title>
 </head>
 <body>
-    <h1>Listen for Song and Decode Message</h1>
+    <h1>Listen for Hidden Messages</h1>
     <button id="start-listening">Start Listening</button>
     <p id="status"></p>
     <p id="decoded-message"></p>
 
     <script>
-        document.getElementById('start-listening').addEventListener('click', listenForSong);
+        document.getElementById('start-listening').addEventListener('click', listenForUltrasound);
 
-        async function listenForSong() {
+        async function listenForUltrasound() {
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             const microphone = audioContext.createMediaStreamSource(stream);
@@ -26,7 +26,7 @@
 
             function detectAudio() {
                 analyser.getByteFrequencyData(dataArray);
-                const detectedFrequencies = getDetectedFrequencies(dataArray);
+                const detectedFrequencies = getDetectedFrequencies(dataArray, audioContext.sampleRate);
                 if (detectedFrequencies.length > 0) {
                     document.getElementById('status').innerText = `Detected Frequencies: ${detectedFrequencies.join(', ')} Hz`;
                     const decodedMessage = decodeMessage(detectedFrequencies);
@@ -34,7 +34,7 @@
                         handleDetectedSignal(decodedMessage);
                     }
                 } else {
-                    document.getElementById('status').innerText = "No frequencies detected. Try playing the audio with the encoded message.";
+                    document.getElementById('status').innerText = "No hidden frequencies detected.";
                 }
                 requestAnimationFrame(detectAudio);
             }
@@ -42,10 +42,31 @@
             detectAudio();
         }
 
-        function getDetectedFrequencies(dataArray) {
-            const threshold = 50; // Lowered threshold for detection
+        function getDetectedFrequencies(dataArray, sampleRate) {
+            const threshold = 50; // Threshold for detection
             const detectedFrequencies = [];
             for (let i = 0; i < dataArray.length; i++) {
                 if (dataArray[i] > threshold) {
-                    const frequency = Math.round(i * (audioContext.sampleRate / dataArray.length)); // Calculate frequency
-                    detecte
+                    const frequency = Math.round(i * (sampleRate / dataArray.length)); // Calculate frequency
+                    if (frequency > 20000) { // Only consider ultrasonic frequencies
+                        detectedFrequencies.push(frequency);
+                    }
+                }
+            }
+            return detectedFrequencies;
+        }
+
+        function decodeMessage(frequencies) {
+            const messageChars = frequencies.map(freq => {
+                return String.fromCharCode(((freq / 100) - 20) % 256); // Reverse encoding
+            });
+            return messageChars.join('');
+        }
+
+        function handleDetectedSignal(decodedMessage) {
+            document.getElementById('status').innerText = "Signal detected! Decoding message...";
+            document.getElementById('decoded-message').innerText = `Decoded Message: ${decodedMessage}`;
+        }
+    </script>
+</body>
+</html>
